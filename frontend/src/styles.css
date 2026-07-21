@@ -1,0 +1,142 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, sans-serif;
+  background: #080c1a;
+  color: #f4f7ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1b2a56 0%, #0a1227 45%, #040712 100%);
+}
+
+#root {
+  padding: 24px;
+}
+
+.app-shell {
+  display: grid;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.section {
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(25, 40, 88, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.grid-columns {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.button-primary {
+  background: #4f7cff;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.button-secondary {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.button-secondary:disabled,
+.button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.chat-bubble {
+  border-radius: 18px;
+  padding: 14px;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-bubble.pro {
+  background: rgba(78, 140, 255, 0.16);
+}
+
+.chat-bubble.con {
+  background: rgba(255, 112, 112, 0.16);
+}
+
+.chat-bubble.user {
+  border-color: rgba(84, 206, 255, 0.25);
+}
+
+.card-list {
+  display: grid;
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.card.used {
+  opacity: 0.5;
+}
+
+textarea {
+  width: 100%;
+  min-height: 90px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #f8fbff;
+  padding: 12px;
+  resize: vertical;
+}
+
+footer {
+  text-align: right;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.65);
+}
