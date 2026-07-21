@@ -4,11 +4,12 @@ interface CardPanelProps {
   cardsBySide: Record<DebateSide, DebateCard[]>;
   currentSide: DebateSide;
   stageKey: 'opening' | 'cardSelection' | 'rebuttal' | 'final';
+  isPlayerTurn: boolean;
   onUseCard: (side: DebateSide, cardId: string) => void;
   activeDefenseSide: DebateSide | null;
 }
 
-export function CardPanel({ cardsBySide, currentSide, stageKey, onUseCard, activeDefenseSide }: CardPanelProps) {
+export function CardPanel({ cardsBySide, currentSide, stageKey, isPlayerTurn, onUseCard, activeDefenseSide }: CardPanelProps) {
   return (
     <div className="section">
       <h2>카드 패널</h2>
@@ -26,11 +27,13 @@ export function CardPanel({ cardsBySide, currentSide, stageKey, onUseCard, activ
                 </div>
                 <button
                   className="button-secondary"
-                  disabled={card.used || side !== currentSide || stageKey !== 'cardSelection'}
+                  disabled={card.used || side !== currentSide || stageKey !== 'cardSelection' || !isPlayerTurn}
                   onClick={() => onUseCard(side, card.id)}
                 >
                   {card.used
                     ? '사용됨'
+                    : !isPlayerTurn
+                    ? 'AI 차례입니다'
                     : stageKey !== 'cardSelection'
                     ? '카드 선택 타임에서만 사용'
                     : side !== currentSide

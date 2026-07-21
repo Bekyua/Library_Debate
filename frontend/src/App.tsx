@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { CardPanel } from './components/CardPanel';
 import { ChatLog } from './components/ChatLog';
 import { ProfilePanel } from './components/ProfilePanel';
@@ -75,6 +75,7 @@ export default function App() {
   const [pendingTimeAdjustments, setPendingTimeAdjustments] = useState<Record<DebateSide, number>>({ pro: 0, con: 0 });
   const [isStreamingResponse, setIsStreamingResponse] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const aiResponseRequested = useRef(false);
 
   const currentStage = stageDefinitions[stageIndex];
   const currentSide = currentStage.sideOrder[turnIndex];
@@ -84,6 +85,15 @@ export default function App() {
   const selectedBook = bookLibrary.find((book) => book.id === selectedBookId) ?? bookLibrary[0];
   const activeDefense = defenseShieldSide !== null && defenseShieldSide !== currentSide;
   const isCardSelectionPhase = currentStage.key === 'cardSelection';
+  const isCompleteEnabled = hasStarted && isPlayerTurn && !isFinished && !isStreamingResponse && (isCardSelectionPhase || inputContent.trim().length > 0);
+  const completeButtonLabel = isPlayerTurn ? '완료' : 'AI 발언 진행 중';
+  const inputPlaceholder = !hasStarted
+    ? '토론을 시작하려면 우선 준비를 완료하세요.'
+    : isPlayerTurn
+    ? isCardSelectionPhase
+      ? '카드를 선택하거나 발언 후 완료 버튼을 누르세요.'
+      : '발언을 작성한 뒤 완료 버튼을 누르세요.'
+    : 'AI가 자동으로 발언을 준비 중입니다.';
 
   useEffect(() => {
     if (!hasStarted || isFinished) {
@@ -277,13 +287,21 @@ export default function App() {
     pushMessage('user', updatedContent);
   }
 
-  function handleUserSubmit() {
-    if (!inputContent.trim() || !isPlayerTurn || isFinished) {
+  function handleCompleteTurn() {
+    if (!hasStarted || isFinished || isStreamingResponse || !isPlayerTurn) {
       return;
     }
 
-    pushMessage(playerSide, inputContent.trim());
-    setInputContent('');
+    if (!isCardSelectionPhase && !inputContent.trim()) {
+      return;
+    }
+
+    if (inputContent.trim()) {
+      pushMessage(playerSide, inputContent.trim());
+      setInputContent('');
+    }
+
+    advanceTurn();
   }
 
   async function generateAIResponse() {
@@ -299,7 +317,12 @@ export default function App() {
       const response = await fetch('/api/ai/stream-response', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ position: currentSide, history: messages.slice(-4).map((item) => item.content), book: selectedBook.title })
+        body: JSON.stringify({
+          position: currentSide,
+          stage: currentStage.key,
+          history: messages.slice(-6).map((item) => item.content),
+          book: selectedBook.title
+        })
       });
 
       if (!response.ok || !response.body) {
@@ -323,12 +346,24 @@ export default function App() {
     } finally {
       setIsStreamingResponse(false);
       setStreamingMessageId(null);
+      if (!isFinished) {
+        advanceTurn();
+      }
     }
   }
 
-  function handleNextTurnClick() {
-    advanceTurn();
-  }
+  useEffect(() => {
+    aiResponseRequested.current = false;
+  }, [stageIndex, turnIndex]);
+
+  useEffect(() => {
+    if (!hasStarted || isPlayerTurn || isFinished || isStreamingResponse || aiResponseRequested.current) {
+      return;
+    }
+
+    aiResponseRequested.current = true;
+    generateAIResponse();
+  }, [hasStarted, stageIndex, turnIndex, currentSide, isPlayerTurn, isFinished, isStreamingResponse]);
 
   function handleReset() {
     setHasStarted(false);
@@ -397,18 +432,12 @@ export default function App() {
              <textarea
                value={inputContent}
                onChange={(event) => setInputContent(event.target.value)}
-               placeholder={isPlayerTurn ? '현재 차례라면 발언을 입력하세요.' : 'AI가 반론을 준비 중입니다.'}
+               placeholder={inputPlaceholder}
                disabled={!hasStarted || !isPlayerTurn || isFinished}
              />
              <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-               <button className="button-primary" onClick={handleUserSubmit} disabled={!hasStarted || !isPlayerTurn || !inputContent.trim() || isFinished}>
-                 발언 제출
-               </button>
-               <button className="button-secondary" onClick={generateAIResponse} disabled={!hasStarted || isPlayerTurn || isFinished || isStreamingResponse}>
-                 {isStreamingResponse ? 'AI 생성 중...' : 'AI 발언 생성'}
-               </button>
-               <button className="button-secondary" onClick={handleNextTurnClick} disabled={!hasStarted || isFinished || isStreamingResponse}>
-                 다음 차례로 이동
+               <button className="button-primary" onClick={handleCompleteTurn} disabled={!isCompleteEnabled}>
+                 {isStreamingResponse ? 'AI 발언 진행 중...' : completeButtonLabel}
                </button>
              </div>
            </div>
@@ -417,6 +446,7 @@ export default function App() {
              cardsBySide={cardsBySide}
              currentSide={currentSide}
              stageKey={currentStage.key}
+             isPlayerTurn={isPlayerTurn}
              onUseCard={handleUseCard}
              activeDefenseSide={defenseShieldSide}
            />
