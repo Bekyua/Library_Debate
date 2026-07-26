@@ -37,4 +37,6 @@ export interface JudgeScore {
   consistency: number;
   evidenceAccuracy: number;
   summary: string;
+  aggregateScore?: number;
+  winner?: 'user' | 'ai' | 'draw';
 }
