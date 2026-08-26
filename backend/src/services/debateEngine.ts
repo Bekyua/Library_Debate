@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import 'dotenv/config';
 import type { Book, ChatMessage, ChatRequest, EvaluationRequest, EvaluationResult, KeywordKey } from '../types';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 const booksPath = path.join(__dirname, '../../books');
 
@@ -27,7 +28,10 @@ async function callOpenAI(payload: Record<string, unknown>): Promise<any> {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY가 설정되어 있지 않습니다.');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: 'Bearer ' + OPENAI_API_KEY,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(payload)
   });
   if (!response.ok) throw new Error(`OpenAI request failed: ${response.status} ${await response.text()}`);
