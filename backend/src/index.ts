@@ -1,42 +1,65 @@
-﻿import express from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
+import express from 'express';
 import cors from 'cors';
-import { generateAiResponse, streamAiResponse, judgeDebate } from './services/debateEngine';
+import { evaluateConversation, generateCharacterResponse, loadBooks } from './services/debateEngine';
+import type { ChatRequest, EvaluationRequest } from './types';
 
 const app = express();
+const surveyPath = path.join(__dirname, '../data/survey.json');
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
-});
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/books', (_req, res) => res.json(loadBooks().map(({ answers: _answers, character, excerpt: _excerpt, ...book }) => ({
+  ...book,
+  character: { name: character.name, age: character.age, gender: character.gender }
+}))));
 
-app.post('/api/ai/response', async (req, res) => {
+app.post('/api/chat', async (req, res) => {
   try {
-    const response = await generateAiResponse(req.body);
-    res.json(response);
+    const request = req.body as ChatRequest;
+    if (!request.bookId || !request.player || !Array.isArray(request.messages) || request.turn < 1) {
+      res.status(400).json({ error: '상담 요청 형식이 올바르지 않습니다.' });
+      return;
+    }
+    const response = await generateCharacterResponse(request);
+    res.json({ response });
   } catch (error) {
-    res.status(500).json({ error: 'AI 응답 생성 중 오류가 발생했습니다.' });
+    console.error(error);
+    res.status(500).json({ error: '내담자 응답을 생성하지 못했습니다.' });
   }
 });
 
-app.post('/api/ai/stream-response', async (req, res) => {
+app.post('/api/evaluate', async (req, res) => {
   try {
-    await streamAiResponse(req.body, res);
+    const request = req.body as EvaluationRequest;
+    if (!request.bookId || !Array.isArray(request.messages)) {
+      res.status(400).json({ error: '판정 요청 형식이 올바르지 않습니다.' });
+      return;
+    }
+    res.json(await evaluateConversation(request));
   } catch (error) {
-    res.status(500).json({ error: 'AI 스트리밍 응답 중 오류가 발생했습니다.' });
+    console.error(error);
+    res.status(500).json({ error: '상담 판정에 실패했습니다.' });
   }
 });
 
-app.post('/api/judge', async (req, res) => {
-  try {
-    const result = await judgeDebate(req.body);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: '심판 평가 생성 중 오류가 발생했습니다.' });
+app.post('/api/survey', (req, res) => {
+  const answer = req.body?.answer;
+  if (answer !== 'Y' && answer !== 'N') {
+    res.status(400).json({ error: 'Y 또는 N으로 응답해 주세요.' });
+    return;
   }
+  fs.mkdirSync(path.dirname(surveyPath), { recursive: true });
+  const counts: { Y: number; N: number } = fs.existsSync(surveyPath)
+    ? JSON.parse(fs.readFileSync(surveyPath, 'utf8')) as { Y: number; N: number }
+    : { Y: 0, N: 0 };
+  if (answer === 'Y') counts.Y += 1;
+  else counts.N += 1;
+  fs.writeFileSync(surveyPath, JSON.stringify(counts, null, 2));
+  res.json({ counts });
 });
 
-const port = 4174;
-app.listen(port, () => {
-  console.log(`Debate backend listening on http://localhost:${port}`);
-});
+const port = Number(process.env.PORT ?? 4174);
+app.listen(port, () => console.log(`Newbook Counseling backend listening on http://localhost:${port}`));

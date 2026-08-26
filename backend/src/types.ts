@@ -1,28 +1,42 @@
-﻿export type DebateSide = 'pro' | 'con';
+export type Gender = '남성' | '여성' | '기타';
+export type KeywordKey = 'hiding' | 'pain' | 'wish';
 
-export interface AiResponseRequest {
-  position: DebateSide;
-  history: string[];
-  stage?: 'opening' | 'cardSelection' | 'rebuttal' | 'final';
-  book?: string;
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  coverImage: string;
+  synopsis: string;
+  character: {
+    name: string;
+    age: number;
+    gender: Gender;
+    setting: string;
+    personality: string;
+    voice: string;
+  };
+  answers: Record<KeywordKey, string>;
+  excerpt: string;
 }
 
-export interface AiResponse {
-  response: string;
+export interface ChatMessage {
+  role: 'player' | 'character';
+  content: string;
 }
 
-export interface JudgeRequest {
-  messages: Array<{ side: DebateSide | 'user'; content: string }>;
-  book?: string;
+export interface ChatRequest {
+  bookId: string;
+  player: { name: string; age: number; gender: Gender };
+  messages: ChatMessage[];
+  turn: number;
 }
 
-export interface JudgeResult {
-  logicStructure: number;
-  consistency: number;
-  evidenceAccuracy: number;
-  summary: string;
-  // Aggregate score computed as weighted average (logicStructure 40%, consistency 30%, evidenceAccuracy 30%)
-  aggregateScore?: number;
-  // Winner according to user-centric threshold rule: 'user' | 'ai' | 'draw'
-  winner?: 'user' | 'ai' | 'draw';
+export interface EvaluationRequest {
+  bookId: string;
+  messages: ChatMessage[];
+}
+
+export interface EvaluationResult {
+  discovered: Record<KeywordKey, boolean>;
+  success: boolean;
 }

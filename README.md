@@ -1,50 +1,26 @@
-# Debate Game Platform
+# 뉴북 상담소
 
-This project is a starting scaffold for an AI-based 1:1 debate game platform.
-The architecture includes a React frontend and a Node/Express backend.
+신입 작가의 일상 소설 속 인물과 25턴 동안 대화하며 마음을 알아가는 웹앱입니다.
 
-## System architecture
+## 구조
 
-- Frontend: React + Vite + TypeScript
-  - Debate flow state machine
-  - Countdown timer display
-  - Chat log UI
-  - Card selection panel
-  - Score report UI
+- `frontend`: React + Vite + TypeScript 채팅 UI
+- `backend`: Node.js + Express API
+- `backend/books/*.json`: 책, 내담자, 정답 키워드, 발췌문 데이터
+- `backend/data/survey.json`: 국립중앙도서관 입고 희망 설문 누적 결과
 
-- Backend: Node + Express + TypeScript
-  - AI response stub endpoint
-  - Judge evaluation endpoint
-  - Debate engine service for turn handling and card effect state
+## 실행
 
-## Key components
+```text
+cd debate-platform/backend
+npm install
+npm run dev
 
-- `DebateBoard`: controls debate phases, current side, and timer behavior
-- `TimerDisplay`: renders turn/phase time remaining
-- `ChatLog`: collects and shows debate utterances
-- `CardPanel`: manages cards, usage and effect application
-- `ScoreReport`: renders AI judge metrics and results
+cd debate-platform/frontend
+npm install
+npm run dev
+```
 
-## Implementation notes
+`OPENAI_API_KEY`를 설정하면 캐릭터 롤플레이와 25턴 후 의미 기반 키워드 판정에 OpenAI function calling을 사용합니다. 키가 없으면 동일한 흐름을 확인할 수 있는 로컬 fallback이 사용됩니다.
 
-- The current scaffold is focused on phase handling and component structure.
-- LLM integration and streaming are implemented in the backend, with a fallback simulated stream when an OpenAI key is not configured.
-- Card effects are modeled using per-side decks and active defense shields, with support for time reduction and extension.
-- 토론 단계는 실제 스펙에 가깝게 구성되어 있습니다: 2분 입론, 카드 선택 타임, 6분 반박/재반론, 1분30초 최종 정리.
-- AI 심판 엔진은 기본 휴리스틱 평가 논리를 포함하며, OpenAI 키가 설정되면 실제 LLM 기반 평가로 확장됩니다.
-
-## Running locally
-
-1. Backend
-   - `cd debate-platform/backend`
-   - `npm install`
-   - `npm run dev`
-
-2. Frontend
-   - `cd debate-platform/frontend`
-   - `npm install`
-   - `npm run dev -- --host 0.0.0.0`
-
-3. Optional OpenAI setup
-   - Set `OPENAI_API_KEY` in your environment to enable real AI streaming and judge evaluation.
-   - Optionally set `OPENAI_MODEL` (defaults to `gpt-3.5-turbo`).
+상담 종료 전에는 엔딩 문구를 노출하지 않으며, 25번째 턴이 끝난 뒤 전체 대화 로그를 한 번에 판정합니다.
